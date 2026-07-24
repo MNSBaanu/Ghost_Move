@@ -1,10 +1,10 @@
 @echo off
-title PocketDev - Mobile AI Coding Assistant
+title GhostMove - Mobile AI Coding Assistant
 color 0A
 
 echo.
 echo  ====================================
-echo    PocketDev - Starting up...
+echo    GhostMove - Starting up...
 echo  ====================================
 echo.
 

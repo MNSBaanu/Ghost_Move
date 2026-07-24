@@ -1,4 +1,4 @@
-# ⚡ PocketDev
+# 👻 GhostMove
 
 AI-powered mobile coding assistant that runs from a pen drive.
 View your code and chat with AI from your phone — while your project stays on the PC.
@@ -39,7 +39,7 @@ GROQ_API_KEY=your_key_here
 PROJECT_DIR=C:\path\to\your\project
 ```
 
-Leave `PROJECT_DIR` empty to browse the PocketDev folder itself.
+Leave `PROJECT_DIR` empty to browse the GhostMove folder itself.
 
 ### 3. Run
 - **Windows**: Double-click `start.bat`

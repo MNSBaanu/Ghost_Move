@@ -1,7 +1,7 @@
 {
-  "name": "pocketdev",
+  "name": "ghostmove",
   "version": "1.0.0",
-  "description": "Mobile AI coding assistant - runs from pen drive",
+  "description": "GhostMove - Mobile AI coding assistant that runs from a pen drive",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

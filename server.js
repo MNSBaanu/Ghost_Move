@@ -186,7 +186,7 @@ server.listen(PORT, "0.0.0.0", () => {
   const url = `http://${ip}:${PORT}`;
 
   console.log("\n╔════════════════════════════════════════╗");
-  console.log("║         PocketDev is running!          ║");
+  console.log("║        GhostMove is running!           ║");
   console.log("╠════════════════════════════════════════╣");
   console.log(`║  Local:   http://localhost:${PORT}         ║`);
   console.log(`║  Phone:   ${url.padEnd(30)}║`);

@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 
 echo ""
 echo " ===================================="
-echo "   PocketDev - Starting up..."
+echo "   GhostMove - Starting up..."
 echo " ===================================="
 echo ""
 
