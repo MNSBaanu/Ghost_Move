@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>PocketDev</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --border:    #30363d;
+      --accent:    #58a6ff;
+      --accent2:   #3fb950;
+      --danger:    #f85149;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --code-bg:   #0d1117;
+      --radius:    8px;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; overflow: hidden; }
+
+    /* ── Layout ── */
+    #app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* ── Header ── */
+    #header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #header h1 { font-size: 1rem; font-weight: 700; color: var(--accent); letter-spacing: 0.5px; }
+    #header .breadcrumb { font-size: 0.75rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+
+    /* ── Tab bar ── */
+    #tabs {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      flex: 1; padding: 10px 0; border: none; background: transparent;
+      color: var(--muted); font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── Panels ── */
+    #panels { flex: 1; overflow: hidden; position: relative; }
+    .panel { position: absolute; inset: 0; overflow-y: auto; display: none; }
+    .panel.active { display: block; }
+    #panel-chat.active { display: flex; flex-direction: column; overflow: hidden; }
+
+    /* ── File list ── */
+    #file-list { padding: 8px; }
+    .dir-label {
+      font-size: 0.7rem; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.8px; padding: 10px 8px 4px;
+    }
+    .file-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: var(--radius);
+      cursor: pointer; transition: background .12s;
+      border: 1px solid transparent;
+    }
+    .file-item:hover, .file-item:active { background: var(--border); }
+    .file-item.selected { background: #1f2a3a; border-color: var(--accent); }
+    .file-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-ext { font-size: 0.7rem; color: var(--muted); background: var(--border); padding: 1px 5px; border-radius: 4px; }
+
+    .back-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 12px; color: var(--accent); cursor: pointer;
+      font-size: 0.85rem; border-bottom: 1px solid var(--border);
+    }
+
+    /* ── Code viewer ── */
+    #code-panel { padding: 0; }
+    #code-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 14px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    #code-filename { font-size: 0.8rem; color: var(--accent); font-weight: 600; }
+    #watch-indicator {
+      font-size: 0.7rem; padding: 2px 8px; border-radius: 10px;
+      background: #1a2a1a; color: var(--accent2);
+    }
+    #watch-indicator.off { background: #2a1a1a; color: var(--danger); }
+
+    pre[class*="language-"] {
+      margin: 0 !important; border-radius: 0 !important;
+      font-size: 0.75rem !important; line-height: 1.6 !important;
+      background: var(--code-bg) !important;
+      padding: 14px !important;
+      min-height: 200px;
+    }
+    #code-empty {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; height: 60vh; color: var(--muted); gap: 8px;
+    }
+    #code-empty .icon { font-size: 2.5rem; }
+
+    /* ── Chat panel ── */
+    #chat-panel { display: flex; flex-direction: column; }
+    #chat-messages { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+    .chat-msg { padding: 10px 12px; border-radius: var(--radius); font-size: 0.82rem; line-height: 1.5; max-width: 95%; }
+    .chat-msg.user { background: #1f2a3a; border: 1px solid #2d4a6e; align-self: flex-end; color: var(--text); }
+    .chat-msg.ai { background: var(--surface); border: 1px solid var(--border); align-self: flex-start; color: var(--text); }
+    .chat-msg.error { background: #2a1212; border: 1px solid var(--danger); color: var(--danger); }
+    .chat-msg pre { margin: 8px 0 0; overflow-x: auto; }
+    .chat-msg pre[class*="language-"] { font-size: 0.72rem !important; border-radius: 6px !important; padding: 10px !important; }
+
+    .apply-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 8px; padding: 6px 12px;
+      background: var(--accent2); color: #0d1117;
+      border: none; border-radius: 6px; font-size: 0.75rem;
+      font-weight: 700; cursor: pointer; transition: opacity .15s;
+    }
+    .apply-btn:hover { opacity: 0.85; }
+    .apply-btn:disabled { opacity: 0.4; cursor: default; }
+
+    #chat-input-area {
+      display: flex; gap: 8px; padding: 10px;
+      background: var(--surface); border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #chat-input {
+      flex: 1; background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 9px 12px;
+      font-size: 0.85rem; resize: none; outline: none; line-height: 1.4;
+    }
+    #chat-input:focus { border-color: var(--accent); }
+    #send-btn {
+      background: var(--accent); color: #0d1117;
+      border: none; border-radius: 8px; padding: 0 16px;
+      font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: opacity .15s;
+      flex-shrink: 0;
+    }
+    #send-btn:disabled { opacity: 0.4; cursor: default; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: #1a2a1a; color: var(--accent2); border: 1px solid var(--accent2);
+      padding: 8px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+      opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 999;
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+    #toast.error { background: #2a1212; color: var(--danger); border-color: var(--danger); }
+
+    /* ── Spinner ── */
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- Header -->
+  <div id="header">
+    <h1>⚡ PocketDev</h1>
+    <span class="breadcrumb" id="breadcrumb">Select a file</span>
+  </div>
+
+  <!-- Tab bar -->
+  <div id="tabs">
+    <button class="tab-btn active" data-tab="files">📁 Files</button>
+    <button class="tab-btn" data-tab="code">📄 Code</button>
+    <button class="tab-btn" data-tab="chat">🤖 AI Chat</button>
+  </div>
+
+  <!-- Panels -->
+  <div id="panels">
+    <!-- Files panel -->
+    <div class="panel active" id="panel-files">
+      <div id="file-list"><p style="padding:20px;color:var(--muted)">Loading files...</p></div>
+    </div>
+
+    <!-- Code panel -->
+    <div class="panel" id="panel-code">
+      <div id="code-panel">
+        <div id="code-header">
+          <span id="code-filename">No file open</span>
+          <span id="watch-indicator" class="off">● offline</span>
+        </div>
+        <div id="code-empty">
+          <span class="icon">📄</span>
+          <span>Open a file from the Files tab</span>
+        </div>
+        <pre id="code-pre" style="display:none"><code id="code-content" class="language-html"></code></pre>
+      </div>
+    </div>
+
+    <!-- Chat panel -->
+    <div class="panel" id="panel-chat" style="display:flex;flex-direction:column;overflow:hidden;">
+      <div id="chat-panel" style="height:100%;display:flex;flex-direction:column;overflow:hidden;">
+        <div id="chat-messages">
+          <div class="chat-msg ai">👋 Hi! Open a file first, then ask me anything about your code. I can suggest changes you can apply with one tap.</div>
+        </div>
+        <div id="chat-input-area">
+          <textarea id="chat-input" rows="1" placeholder="Ask AI about your code..."></textarea>
+          <button id="send-btn">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+const state = {
+  currentFile: null,      // relative path string
+  currentContent: '',     // file content string
+  currentDir: '',         // current browsed dir (relative)
+  ws: null,
+  wsReady: false,
+};
+
+// ─── Tabs ────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+}
+
+// ─── Toast ───────────────────────────────────────────────────────────────────
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (isError ? ' error' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = '', 2500);
+}
+
+// ─── File browser ─────────────────────────────────────────────────────────────
+async function loadFiles(dir = '') {
+  state.currentDir = dir;
+  const list = document.getElementById('file-list');
+  list.innerHTML = '<p style="padding:20px;color:var(--muted)">Loading...</p>';
+  try {
+    const res = await fetch('/api/files' + (dir ? '?dir=' + encodeURIComponent(dir) : ''));
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderFileList(data.files, data.cwd, dir);
+  } catch (e) {
+    list.innerHTML = `<p style="padding:20px;color:var(--danger)">${e.message}</p>`;
+  }
+}
+
+function renderFileList(files, cwd, dir) {
+  const list = document.getElementById('file-list');
+  list.innerHTML = '';
+
+  if (dir) {
+    const back = document.createElement('div');
+    back.className = 'back-btn';
+    back.innerHTML = '← Back';
+    back.addEventListener('click', () => {
+      const parts = dir.split('/').filter(Boolean);
+      parts.pop();
+      loadFiles(parts.join('/'));
+    });
+    list.appendChild(back);
+  }
+
+  const label = document.createElement('div');
+  label.className = 'dir-label';
+  label.textContent = cwd === '.' ? 'Project root' : cwd;
+  list.appendChild(label);
+
+  files.forEach(f => {
+    const item = document.createElement('div');
+    item.className = 'file-item' + (state.currentFile === f.path ? ' selected' : '');
+    const ext = f.name.includes('.') ? f.name.split('.').pop() : '';
+    const icon = f.isDir ? '📁' : getFileIcon(ext);
+    item.innerHTML = `<span class="file-icon">${icon}</span><span class="file-name">${f.name}</span>${!f.isDir && ext ? `<span class="file-ext">${ext}</span>` : ''}`;
+    item.addEventListener('click', () => {
+      if (f.isDir) { loadFiles(f.path); } else { openFile(f.path, f.name); }
+    });
+    list.appendChild(item);
+  });
+
+  if (files.length === 0) {
+    list.innerHTML += '<p style="padding:20px;color:var(--muted);text-align:center">Empty folder</p>';
+  }
+}
+
+function getFileIcon(ext) {
+  const map = { html:'🌐', css:'🎨', js:'💛', ts:'💙', json:'📋', md:'📝', py:'🐍', php:'🐘', txt:'📄', svg:'🖼️', png:'🖼️', jpg:'🖼️' };
+  return map[ext] || '📄';
+}
+
+// ─── Open file ────────────────────────────────────────────────────────────────
+async function openFile(filePath, fileName) {
+  document.getElementById('breadcrumb').textContent = fileName || filePath;
+  document.getElementById('code-filename').textContent = fileName || filePath;
+  try {
+    const res = await fetch('/api/file?path=' + encodeURIComponent(filePath));
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    state.currentFile = filePath;
+    state.currentContent = data.content;
+    renderCode(data.content, filePath);
+    switchTab('code');
+    watchFile(filePath);
+    // re-render file list to show selected
+    loadFiles(state.currentDir);
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+function renderCode(content, filePath) {
+  const ext = (filePath || '').split('.').pop();
+  const langMap = { js:'javascript', ts:'typescript', html:'html', css:'css', json:'json', py:'python', php:'php', md:'markdown', sh:'bash', bat:'batch' };
+  const lang = langMap[ext] || 'plain';
+  const pre = document.getElementById('code-pre');
+  const code = document.getElementById('code-content');
+  code.className = 'language-' + lang;
+  code.textContent = content;
+  pre.style.display = 'block';
+  document.getElementById('code-empty').style.display = 'none';
+  if (window.Prism) Prism.highlightElement(code);
+}
+
+// ─── WebSocket ────────────────────────────────────────────────────────────────
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  state.ws = new WebSocket(`${proto}//${location.host}`);
+
+  state.ws.onopen = () => {
+    state.wsReady = true;
+    updateWatchIndicator(true);
+    if (state.currentFile) watchFile(state.currentFile);
+  };
+
+  state.ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'fileUpdate' && msg.path === state.currentFile) {
+        state.currentContent = msg.content;
+        renderCode(msg.content, msg.path);
+      }
+    } catch (_) {}
+  };
+
+  state.ws.onclose = () => {
+    state.wsReady = false;
+    updateWatchIndicator(false);
+    setTimeout(connectWS, 2000); // auto-reconnect
+  };
+
+  state.ws.onerror = () => state.ws.close();
+}
+
+function watchFile(filePath) {
+  if (state.wsReady && state.ws.readyState === WebSocket.OPEN) {
+    state.ws.send(JSON.stringify({ type: 'watch', path: filePath }));
+  }
+}
+
+function updateWatchIndicator(online) {
+  const el = document.getElementById('watch-indicator');
+  el.textContent = online ? '● live' : '● offline';
+  el.className = online ? '' : 'off';
+}
+
+// ─── AI Chat ──────────────────────────────────────────────────────────────────
+const chatMessages = document.getElementById('chat-messages');
+const chatInput = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+
+function appendMessage(role, html) {
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.innerHTML = html;
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return div;
+}
+
+function parseCodeBlocks(text) {
+  // Store code blocks in a map keyed by a short ID, not in HTML attributes
+  const codeStore = {};
+  let idx = 0;
+  const html = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+    const trimmed = code.trim();
+    const key = 'cb_' + (idx++);
+    codeStore[key] = trimmed;
+    const langClass = lang || 'plain';
+    const fileName = state.currentFile ? state.currentFile.split('/').pop() : 'file';
+    return `<pre class="language-${langClass}"><code class="language-${langClass}">${escapeHtml(trimmed)}</code></pre><button class="apply-btn" data-key="${key}">✅ Apply to ${fileName}</button>`;
+  });
+  const withBreaks = html.replace(/\n/g, '<br>');
+  return { html: withBreaks, codeStore };
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function sendMessage() {
+  const msg = chatInput.value.trim();
+  if (!msg) return;
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+  sendBtn.disabled = true;
+
+  appendMessage('user', escapeHtml(msg));
+
+  const loadingDiv = appendMessage('ai', '<span class="spinner"></span> Thinking...');
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, fileContent: state.currentContent, filePath: state.currentFile }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const { html, codeStore } = parseCodeBlocks(data.reply);
+    loadingDiv.innerHTML = html;
+    if (window.Prism) Prism.highlightAllUnder(loadingDiv);
+    // Wire up apply buttons using the codeStore map
+    loadingDiv.querySelectorAll('.apply-btn').forEach(btn => {
+      const code = codeStore[btn.dataset.key];
+      if (code !== undefined) btn.addEventListener('click', () => applyCode(code, btn));
+    });
+  } catch (e) {
+    loadingDiv.className = 'chat-msg error';
+    loadingDiv.textContent = '⚠ ' + e.message;
+  } finally {
+    sendBtn.disabled = false;
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+}
+
+async function applyCode(code, btn) {
+  if (!state.currentFile) { showToast('No file open', true); return; }
+  btn.disabled = true;
+  btn.textContent = 'Applying...';
+  try {
+    const res = await fetch('/api/file/write', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: state.currentFile, content: code }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    state.currentContent = code;
+    renderCode(code, state.currentFile);
+    showToast('✅ Applied to ' + state.currentFile.split('/').pop());
+    btn.textContent = '✓ Applied';
+  } catch (e) {
+    showToast(e.message, true);
+    btn.disabled = false;
+    btn.textContent = '✅ Apply';
+  }
+}
+
+sendBtn.addEventListener('click', sendMessage);
+chatInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+chatInput.addEventListener('input', () => { chatInput.style.height = 'auto'; chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px'; });
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+connectWS();
+loadFiles();
+</script>
+</body>
+</html>

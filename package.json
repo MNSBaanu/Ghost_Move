@@ -1,0 +1,16 @@
+{
+  "name": "pocketdev",
+  "version": "1.0.0",
+  "description": "Mobile AI coding assistant - runs from pen drive",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "16.4.5",
+    "express": "4.22.2",
+    "groq-sdk": "0.3.3",
+    "qrcode-terminal": "0.12.0",
+    "ws": "8.21.1"
+  }
+}
